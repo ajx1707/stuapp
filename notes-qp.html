@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Notes/QP</title>
+    <style>
+        body {
+            padding: 30px;
+            background: linear-gradient(to right, #e2e2e2, #c9d6ff);
+            font-family: Arial, sans-serif;
+        }
+        h1 {
+            text-align: center;
+            margin-bottom: 50px;
+            color: #333;
+        }
+        .container {
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-around;
+        }
+        .card {
+            background-color: #fff;
+            border-radius: 10px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            width: 300px;
+            margin: 20px;
+            padding: 20px;
+            text-align: center;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+        .card:hover {
+            transform: translateY(-10px);
+            box-shadow: 0 8px 16px rgba(0, 0, 0, 0.2);
+        }
+        .card h2 {
+            font-size: 20px;
+            color: #4CAF50;
+        }
+        .card a {
+            display: inline-block;
+            margin: 10px 0;
+            padding: 10px 20px;
+            background-color: #4CAF50;
+            color: white;
+            text-decoration: none;
+            border-radius: 5px;
+            transition: background-color 0.3s;
+        }
+        .card a:hover {
+            background-color: #45a049;
+        }
+        .back-link {
+            display: block;
+            margin: 40px auto;
+            text-align: center;
+            font-size: 16px;
+            color: #555;
+        }
+        .back-link a {
+            color: #4CAF50;
+            text-decoration: none;
+            font-weight: bold;
+        }
+        .file-list {
+            margin-top: 15px;
+            text-align: left;
+            list-style: none;
+            padding: 0;
+        }
+        .file-list li {
+            margin: 5px 0;
+            display: flex; /* Using flexbox for alignment */
+            justify-content: space-between; /* Space between file name and download link */
+            align-items: center; /* Aligns items vertically */
+            padding: 5px 0; /* Added padding for better spacing */
+            border-bottom: 1px solid #ccc; /* Optional: adds a separator */
+        }
+        .file-list a {
+            text-decoration: none;
+            color: #4CAF50;
+            font-weight: bold;
+            padding: 5px 10px; /* Padding for the download button */
+            border-radius: 5px;
+            background-color: #fff; /* Background color for better visibility */
+            border: 1px solid #4CAF50; /* Border for button */
+            transition: background-color 0.3s;
+        }
+        .file-list a:hover {
+            background-color: #4CAF50; /* Changes background on hover */
+            color: white; /* Changes text color on hover */
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Notes and Question Papers</h1>
+
+    <div class="container">
+        <div class="card">
+            <h2>HS3152 Professional English</h2>
+            <a href="#" onclick="fetchMaterials('english')">View Materials</a>
+            <ul id="english-files" class="file-list"></ul>
+        </div>
+
+        <div class="card">
+            <h2>MA3151 Matrices and Calculus</h2>
+            <a href="#" onclick="fetchMaterials('math')">View Materials</a>
+            <ul id="math-files" class="file-list"></ul>
+        </div>
+
+        <div class="card">
+            <h2>PH3151 Engineering Physics</h2>
+            <a href="#" onclick="fetchMaterials('PH3151')">View Materials</a>
+            <ul id="PH3151-files" class="file-list"></ul>
+        </div>
+
+        <div class="card">
+            <h2>CY3151 Engineering Chemistry</h2>
+            <a href="#" onclick="fetchMaterials('CY3151')">View Materials</a>
+            <ul id="CY3151-files" class="file-list"></ul>
+        </div>
+
+        <div class="card">
+            <h2>GE3151 Problem Solving and Python Programming</h2>
+            <a href="#" onclick="fetchMaterials('GE3151')">View Materials</a>
+            <ul id="GE3151-files" class="file-list"></ul>
+        </div>
+
+        <div class="card">
+            <h2>GE3152 Heritage of Tamils</h2>
+            <a href="#" onclick="fetchMaterials('GE3152')">View Materials</a>
+            <ul id="GE3152-files" class="file-list"></ul>
+        </div>
+    </div>
+
+    <div class="back-link">
+        <a href="index.html">Back to Home</a>
+    </div>
+
+    <!-- Firebase and Download Notes Script -->
+    <script type="module">
+        // Import Firebase SDK
+        import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-app.js";
+        import { getStorage, ref, listAll, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.13.2/firebase-storage.js";
+
+        // Your Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyBSK75CBgecge25CnvxE28bd_TJuv4XTtc",
+            authDomain: "signin-2f153.firebaseapp.com",
+            databaseURL: "https://signin-2f153-default-rtdb.asia-southeast1.firebasedatabase.app",
+            projectId: "signin-2f153",
+            storageBucket: "signin-2f153.appspot.com",
+            messagingSenderId: "319342754495",
+            appId: "1:319342754495:web:a642022973f1bd6682a40a",
+            measurementId: "G-GGV5KTNDNP"
+        };
+
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const storage = getStorage(app);
+
+        // Function to fetch and display study materials
+        window.fetchMaterials = function(subjectCode) {
+            // Clear previous files from all subjects
+            const allSubjects = ['english', 'math', 'PH3151', 'CY3151', 'GE3151', 'GE3152'];
+            allSubjects.forEach(code => {
+                const subjectList = document.getElementById(`${code}-files`);
+                subjectList.innerHTML = "";  // Clear previous files
+            });
+
+            const subjectList = document.getElementById(`${subjectCode}-files`);
+            subjectList.innerHTML = "";  // Clear any previous files
+            
+            const listRef = ref(storage, `materials/${subjectCode}`);
+            
+            // List all items in the subject folder
+            listAll(listRef)
+                .then((res) => {
+                    if (res.items.length === 0) {
+                        subjectList.innerHTML = "<li>No materials available</li>";
+                    } else {
+                        res.items.forEach((itemRef) => {
+                            // Get the file's download URL
+                            getDownloadURL(itemRef).then((url) => {
+                                const fileName = itemRef.name;
+                                const listItem = document.createElement('li');
+                                listItem.textContent = fileName;  // Displaying the file name clearly
+                                const link = document.createElement('a');
+                                link.href = url;
+                                link.target = "_blank";
+                                link.innerText = "Download"; // Clear text for action
+                                listItem.appendChild(link);
+                                subjectList.appendChild(listItem);
+                            });
+                        });
+                    }
+                })
+                .catch((error) => {
+                    console.error('Error fetching files:', error.code, error.message);
+                    subjectList.innerHTML = "<li>Error loading materials.</li>";
+                });
+        };
+    </script>
+</body>
+</html>

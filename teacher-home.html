@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Teacher Home</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      margin: 0;
+      padding: 0;
+    }
+
+    header {
+      background-color: #4CAF50;
+      color: white;
+      padding: 10px 20px;
+      text-align: center;
+    }
+
+    h1 {
+      font-size: 2rem;
+      margin: 0;
+    }
+
+    p {
+      margin: 10px 0;
+    }
+
+    #welcomeMessage {
+      font-size: 1.2rem;
+      margin-bottom: 20px;
+    }
+
+    form {
+      background-color: white;
+      margin: 20px auto;
+      padding: 20px;
+      border-radius: 8px;
+      box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+      max-width: 500px;
+    }
+
+    label {
+      font-size: 1rem;
+      display: block;
+      margin-bottom: 8px;
+    }
+
+    select, input[type="file"], button {
+      width: 100%;
+      padding: 10px;
+      margin-bottom: 20px;
+      font-size: 1rem;
+      border-radius: 4px;
+      border: 1px solid #ccc;
+      box-sizing: border-box;
+    }
+
+    button {
+      background-color: #4CAF50;
+      color: white;
+      border: none;
+      cursor: pointer;
+    }
+
+    button:hover {
+      background-color: #45a049;
+    }
+
+    #logoutButton {
+      background-color: #f44336;
+    }
+
+    #logoutButton:hover {
+      background-color: #e53935;
+    }
+
+    .container {
+      text-align: center;
+      margin: 40px auto;
+      max-width: 800px;
+    }
+  </style>
+
+  <script type="module">
+    // Firebase and functionality setup
+    import { initializeApp } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-app.js";
+    import { getAuth, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-auth.js";
+    import { getStorage, ref, uploadBytes, getDownloadURL, listAll } from "https://www.gstatic.com/firebasejs/10.13.1/firebase-storage.js";
+
+    const firebaseConfig = {
+      apiKey: "AIzaSyBSK75CBgecge25CnvxE28bd_TJuv4XTtc",
+      authDomain: "signin-2f153.firebaseapp.com",
+      projectId: "signin-2f153",
+      storageBucket: "signin-2f153.appspot.com",
+      messagingSenderId: "319342754495",
+      appId: "1:319342754495:web:7e2655cc045345dd82a40a",
+      measurementId: "G-QJ2FQV4JRT"
+    };
+
+    const app = initializeApp(firebaseConfig);
+    const auth = getAuth();
+    const storage = getStorage();
+
+    // Authentication check
+    onAuthStateChanged(auth, (user) => {
+      if (user) {
+        document.getElementById('welcomeMessage').innerHTML = `Welcome, ${user.email}`;
+      } else {
+        window.location.href = 'index.html';
+      }
+    });
+
+    // Handle file upload
+    document.getElementById('uploadForm').addEventListener('submit', async (event) => {
+      event.preventDefault();
+
+      const fileInput = document.getElementById('fileUpload');
+      const subject = document.getElementById('subject').value;
+
+      if (!fileInput.files[0]) {
+        alert('Please select a file to upload.');
+        return;
+      }
+
+      const file = fileInput.files[0];
+      const fileRef = ref(storage, `materials/${subject}/${file.name}`);
+
+      try {
+        // Upload file to Firebase Storage
+        const snapshot = await uploadBytes(fileRef, file);
+        const downloadURL = await getDownloadURL(snapshot.ref);
+
+        alert(`File uploaded successfully! File URL: ${downloadURL}`);
+        document.getElementById('fileUpload').value = '';  // Clear the file input
+      } catch (error) {
+        console.error("Error uploading file: ", error);
+        alert('Error uploading file.');
+      }
+    });
+
+    // Display existing files for a subject
+    document.getElementById('showFiles').addEventListener('click', async () => {
+      const subject = document.getElementById('subject').value;
+      const listRef = ref(storage, `materials/${subject}`);
+
+      try {
+        const res = await listAll(listRef);
+        const fileList = document.getElementById('fileList');
+        fileList.innerHTML = ''; // Clear previous list
+
+        res.items.forEach(async (itemRef) => {
+          const url = await getDownloadURL(itemRef);
+          const listItem = document.createElement('li');
+          const link = document.createElement('a');
+          link.href = url;
+          link.textContent = itemRef.name;
+          link.target = "_blank";
+          listItem.appendChild(link);
+          fileList.appendChild(listItem);
+        });
+      } catch (error) {
+        console.error("Error listing files: ", error);
+        alert('Error retrieving files.');
+      }
+    });
+
+    // Sign out
+    document.getElementById('logoutButton').addEventListener('click', () => {
+      signOut(auth).then(() => {
+        window.location.href = 'index.html'; // Redirect to login after logout
+      }).catch((error) => {
+        console.error("Sign out error:", error);
+      });
+    });
+  </script>
+</head>
+
+<body>
+  <header>
+    <h1>Teacher Dashboard</h1>
+  </header>
+
+  <div class="container">
+    <p id="welcomeMessage"></p>
+
+    <!-- Upload Study Material Form -->
+    <form id="uploadForm">
+      <label for="subject">Select Subject:</label>
+      <select id="subject" required>
+        <option value="math">Mathematics</option>
+        <option value="english">English</option>
+        <option value="physics">Physics</option>
+        <option value="chemistry">Chemistry</option>
+        <option value="python">Python</option>
+        
+        <!-- Add more subjects as needed -->
+      </select>
+
+      <label for="fileUpload">Upload Study Material:</label>
+      <input type="file" id="fileUpload" accept=".pdf,.doc,.docx,.ppt,.pptx" required />
+
+      <button type="submit">Upload</button>
+    </form>
+
+    <button id="showFiles">Show Uploaded Files</button>
+    <ul id="fileList"></ul>
+
+    <button id="logoutButton">Logout</button>
+  </div>
+</body>
+</html>
